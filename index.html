@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>RepDuel</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#0f1420;--panel:#182033;--ink:#f2f5fb;--mute:#8d99b3;--acc:#7cd1ff;--ok:#5be3a0;--bad:#ff7a6b}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+.screen{display:none;position:absolute;inset:0;padding:env(safe-area-inset-top) 18px env(safe-area-inset-bottom);flex-direction:column}
+.screen.on{display:flex}
+h1{font-size:26px;margin:22px 0 4px}
+p.sub{color:var(--mute);margin-bottom:18px}
+.exs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.ex{background:var(--panel);border:2px solid transparent;border-radius:16px;padding:16px 4px;text-align:center;color:var(--ink);font:inherit;font-size:14px}
+.ex b{display:block;font-size:30px;margin-bottom:4px}
+.ex.sel{border-color:var(--acc)}
+.tip{background:var(--panel);border-radius:14px;padding:14px 16px;color:var(--mute);font-size:14px;white-space:pre-line}
+.grow{flex:1}
+button.main{background:var(--acc);color:#06121c;border:0;border-radius:16px;padding:17px;font:inherit;font-weight:700;font-size:18px;margin:14px 0}
+button.ghost{background:var(--panel);color:var(--ink);border:0;border-radius:16px;padding:14px;font:inherit;margin-bottom:8px}
+#stage{position:relative;flex:1;margin:0 -18px;background:#000;overflow:hidden}
+#cam,#ov{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.mir{transform:scaleX(-1)}
+#count{position:absolute;left:0;right:0;bottom:16px;text-align:center;font-size:120px;font-weight:800;line-height:1;text-shadow:0 4px 24px #000a}
+#meta{position:absolute;top:12px;left:14px;right:14px;display:flex;justify-content:space-between;font-weight:600;text-shadow:0 2px 8px #000}
+#hint{position:absolute;left:14px;right:14px;top:48px;text-align:center;color:#fff;background:#000a;border-radius:12px;padding:8px 12px;font-size:14px;display:none}
+#cd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:160px;font-weight:800;background:#0008}
+#bar{display:flex;gap:10px;padding:12px 0}
+#bar button{flex:1;margin:0}
+.res{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:18px 0}
+.res div{background:var(--panel);border-radius:14px;padding:12px;text-align:center}
+.res small{display:block;color:var(--mute);font-size:12px}
+.res strong{font-size:24px}
+.big{font-size:150px;font-weight:800;text-align:center;line-height:1.1;margin-top:20px;color:var(--acc)}
+.center{text-align:center;color:var(--mute)}
+#load{position:absolute;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--mute);z-index:5}
+</style>
+</head>
+<body>
+<div id="load">…</div>
+
+<section id="s-setup" class="screen on">
+  <h1 id="t-title"></h1>
+  <p class="sub" id="t-sub"></p>
+  <div class="exs" id="exs"></div>
+  <div class="tip" id="tip"></div>
+  <div class="grow"></div>
+  <button class="main" id="go"></button>
+</section>
+
+<section id="s-live" class="screen">
+  <div id="stage">
+    <video id="cam" playsinline muted></video>
+    <canvas id="ov"></canvas>
+    <div id="meta"><span id="exname"></span><span id="clock">0:00</span></div>
+    <div id="hint"></div>
+    <div id="count">0</div>
+    <div id="cd"></div>
+  </div>
+  <div id="bar">
+    <button class="ghost" id="flip">⟲</button>
+    <button class="main" id="stop"></button>
+  </div>
+</section>
+
+<section id="s-res" class="screen">
+  <div class="big" id="r-reps">0</div>
+  <p class="center" id="r-ex"></p>
+  <div class="res">
+    <div><small id="l-time"></small><strong id="r-time"></strong></div>
+    <div><small id="l-form"></small><strong id="r-form"></strong></div>
+    <div><small id="l-part"></small><strong id="r-part"></strong></div>
+  </div>
+  <div class="grow"></div>
+  <button class="main" id="send"></button>
+  <button class="ghost" id="again"></button>
+</section>
+
+<script type="module">
+import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+const tg = window.Telegram?.WebApp;
+tg?.ready(); tg?.expand();
+try { tg?.disableVerticalSwipes?.(); } catch {}
+
+const qs = new URLSearchParams(location.search);
+const lang = ((tg?.initDataUnsafe?.user?.language_code || navigator.language || "en").slice(0,2));
+const RU = ["ru","uk","be","kk"].includes(lang);
+const L = RU ? {
+  title:"Счёт повторений", sub:"Поставь телефон, выбери упражнение — ИИ считает прямо в камере.",
+  start:"Начать", stop:"Закончить", send:"Отправить результат", again:"Заново",
+  time:"Время", form:"Чистота", part:"Неполные", wait:"Загружаю нейросеть…",
+  nopose:"Не вижу тебя. Встань так, чтобы всё тело было в кадре.",
+  tilt_h:"Для отжиманий встань боком к камере, тело горизонтально.",
+  tilt_v:"Встань вертикально, боком или лицом к камере.",
+  camerr:"Нет доступа к камере. Разреши камеру в настройках Telegram.",
+  ex:{pushup:"Отжимания",squat:"Приседания",pullup:"Подтягивания"},
+  tips:{
+   pushup:"• телефон сбоку на полу, 2 м от тебя\n• видно всё тело от рук до ног\n• локти до ~90°, затем полностью выпрямить",
+   squat:"• телефон сбоку на уровне пояса, 2–3 м\n• видно от головы до стоп\n• колено до ~90°, затем встать полностью",
+   pullup:"• камера сбоку или чуть спереди, 2–3 м\n• видно перекладину и всё тело\n• из виса, подбородок выше кистей"}
+} : {
+  title:"Rep counter", sub:"Prop up your phone, pick an exercise. AI counts live on camera.",
+  start:"Start", stop:"Finish", send:"Send result", again:"Redo",
+  time:"Time", form:"Form", part:"Partial", wait:"Loading the model…",
+  nopose:"Can't see you. Keep your whole body in frame.",
+  tilt_h:"For push-ups stand sideways to the camera, body horizontal.",
+  tilt_v:"Stand upright, sideways or facing the camera.",
+  camerr:"No camera access. Allow the camera in Telegram settings.",
+  ex:{pushup:"Push-ups",squat:"Squats",pullup:"Pull-ups"},
+  tips:{
+   pushup:"• phone on the floor, side view, 2 m away\n• whole body in frame\n• elbows to ~90°, then lock out",
+   squat:"• phone at waist height, side view, 2–3 m\n• head to feet in frame\n• knee to ~90°, then stand fully",
+   pullup:"• camera from the side or slightly front, 2–3 m\n• bar and whole body in frame\n• from dead hang, chin above wrists"}
+};
+
+// Те же пороги, что в bot.py
+const EX = {
+  pushup:{icon:"💪",joint:["sh","el","wr"],orient:"h",down:100,descent:135,up:150,gap:.35,chin:false},
+  squat:{icon:"🦵",joint:["hip","kn","an"],orient:"v",down:100,descent:140,up:160,gap:.70,chin:false},
+  pullup:{icon:"🧗",joint:["sh","el","wr"],orient:"v",down:75,descent:120,up:155,gap:.80,chin:true},
+};
+const SIDES = {
+  L:{sh:11,el:13,wr:15,hip:23,kn:25,an:27},
+  R:{sh:12,el:14,wr:16,hip:24,kn:26,an:28},
+};
+const NOSE = 0;
+
+class RepCounter {
+  constructor(c){ this.c=c; this.state="up"; this.min=180; this.bottomOk=false; this.reps=0; this.partial=0; this.last=-10; }
+  update(a,t,extra=true){
+    const c=this.c;
+    if(this.state==="up"){
+      if(a<c.descent){ this.state="down"; this.min=a; this.bottomOk=a<=c.down&&extra; }
+    } else {
+      this.min=Math.min(this.min,a);
+      if(a<=c.down&&extra) this.bottomOk=true;
+      if(a>c.up){
+        let counted=null;
+        if(t-this.last>=c.gap){
+          const deep=this.min<=c.down;
+          if(deep&&(this.bottomOk||!c.chin)){ this.reps++; counted="rep"; }
+          else { this.partial++; counted="partial"; }
+          this.last=t;
+        }
+        this.state="up";
+        return counted;
+      }
+    }
+    return null;
+  }
+}
+
+function angle(a,b,c){
+  const v1=[a[0]-b[0],a[1]-b[1]], v2=[c[0]-b[0],c[1]-b[1]];
+  const n=Math.hypot(...v1)*Math.hypot(...v2);
+  if(n<1e-9) return null;
+  const cos=Math.max(-1,Math.min(1,(v1[0]*v2[0]+v1[1]*v2[1])/n));
+  return Math.acos(cos)*180/Math.PI;
+}
+
+// Возвращает {ang, side, extra} или {err}
+function measure(lm,w,h,cfg){
+  let best=null;
+  for(const side of Object.values(SIDES)){
+    const idx=cfg.joint.map(k=>side[k]);
+    const vis=Math.min(...idx.map(i=>lm[i].visibility??0));
+    if(!best||vis>best.vis) best={vis,side,idx};
+  }
+  if(best.vis<.5) return {err:"nopose"};
+  const {side,idx}=best;
+  const px=i=>[lm[i].x*w, lm[i].y*h];
+  const far=(lm[side.an].visibility??0)>=.3?side.an:side.hip;
+  const dx=Math.abs(px(side.sh)[0]-px(far)[0]), dy=Math.abs(px(side.sh)[1]-px(far)[1]);
+  const tilt=Math.atan2(dy,Math.max(dx,1e-6))*180/Math.PI;
+  if(cfg.orient==="h"&&tilt>40) return {err:"tilt_h"};
+  if(cfg.orient==="v"&&tilt<50) return {err:"tilt_v"};
+  const ang=angle(px(idx[0]),px(idx[1]),px(idx[2]));
+  if(ang==null) return {err:"nopose"};
+  let extra=true;
+  if(cfg.chin&&(lm[NOSE].visibility??0)>=.3) extra=px(NOSE)[1]<px(side.wr)[1];
+  return {ang,side,extra};
+}
+
+// ── UI ──
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id));};
+let exKey = EX[qs.get("ex")] ? qs.get("ex") : "pushup";
+const duel = qs.get("duel") || "";
+
+$("t-title").textContent=L.title; $("t-sub").textContent=L.sub;
+$("go").textContent=L.start; $("stop").textContent=L.stop;
+$("send").textContent=L.send; $("again").textContent=L.again;
+$("l-time").textContent=L.time; $("l-form").textContent=L.form; $("l-part").textContent=L.part;
+
+function renderEx(){
+  $("exs").innerHTML="";
+  for(const k of Object.keys(EX)){
+    const b=document.createElement("button");
+    b.className="ex"+(k===exKey?" sel":"");
+    b.innerHTML=`<b>${EX[k].icon}</b>${L.ex[k]}`;
+    b.onclick=()=>{exKey=k;renderEx();tg?.HapticFeedback?.selectionChanged();};
+    $("exs").appendChild(b);
+  }
+  $("tip").textContent=L.tips[exKey];
+}
+renderEx();
+
+// ── Нейросеть ──
+let landmarker=null;
+async function initModel(){
+  const fileset=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  // Сначала своя копия модели рядом с index.html, потом Google
+  const urls=["./pose_landmarker_lite.task","https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task"];
+  for(const url of urls){
+    for(const delegate of ["GPU","CPU"]){
+      try{
+        return await PoseLandmarker.createFromOptions(fileset,{
+          baseOptions:{modelAssetPath:url,delegate},
+          runningMode:"VIDEO",numPoses:1});
+      }catch(e){console.warn("model init",url,delegate,e);}
+    }
+  }
+  throw new Error("model");
+}
+
+// ── Камера и цикл ──
+let stream=null, facing="user", running=false, counter, cfg, t0=0, valid=0, total=0, win=[], lastGood=0, lastTs=-1, wake=null;
+const vid=$("cam"), cv=$("ov"), ctx=cv.getContext("2d");
+
+async function openCam(){
+  stream?.getTracks().forEach(t=>t.stop());
+  stream=await navigator.mediaDevices.getUserMedia({
+    video:{facingMode:facing,width:{ideal:640},height:{ideal:480},frameRate:{ideal:30}},audio:false});
+  vid.srcObject=stream; await vid.play();
+  const m=facing==="user";
+  vid.classList.toggle("mir",m); cv.classList.toggle("mir",m);
+}
+
+function hint(msg){ const h=$("hint"); h.textContent=msg||""; h.style.display=msg?"block":"none"; }
+
+function drawPose(lm,side,w,h){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if(!lm||!side) return;
+  // object-fit: cover — пересчёт координат кадра в координаты канваса
+  const s=Math.max(cv.width/w,cv.height/h), ox=(cv.width-w*s)/2, oy=(cv.height-h*s)/2;
+  const P=i=>[lm[i].x*w*s+ox, lm[i].y*h*s+oy];
+  ctx.lineWidth=5; ctx.lineCap="round"; ctx.strokeStyle="#7cd1ff"; ctx.fillStyle="#fff";
+  const chains=[["sh","el","wr"],["sh","hip","kn","an"]];
+  for(const ch of chains){
+    ctx.beginPath();
+    ch.forEach((k,i)=>{const [x,y]=P(side[k]); i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.stroke();
+    ch.forEach(k=>{const [x,y]=P(side[k]); ctx.beginPath(); ctx.arc(x,y,6,0,7); ctx.fill();});
+  }
+}
+
+function loop(){
+  if(!running) return;
+  requestAnimationFrame(loop);
+  if(vid.readyState<2||vid.videoWidth===0) return;
+  if(vid.currentTime===lastTs) return;
+  lastTs=vid.currentTime;
+  const w=vid.videoWidth, h=vid.videoHeight;
+  if(cv.width!==cv.clientWidth){cv.width=cv.clientWidth;cv.height=cv.clientHeight;}
+  const now=performance.now();
+  const res=landmarker.detectForVideo(vid,now);
+  const t=(now-t0)/1000;
+  total++;
+  const lm=res.landmarks?.[0];
+  if(!lm){ drawPose(null); if(t-lastGood>1.5) hint(L.nopose); return; }
+  const m=measure(lm,w,h,cfg);
+  if(m.err){ drawPose(null); if(t-lastGood>1.5) hint(L[m.err]); return; }
+  lastGood=t; hint(""); valid++;
+  win.push(m.ang); if(win.length>3) win.shift();
+  const avg=win.reduce((a,b)=>a+b,0)/win.length;
+  const r=counter.update(avg,t,m.extra);
+  if(r==="rep"){ $("count").textContent=counter.reps; tg?.HapticFeedback?.impactOccurred("medium"); }
+  else if(r==="partial"){ tg?.HapticFeedback?.notificationOccurred("warning"); }
+  drawPose(lm,m.side,w,h);
+}
+
+async function countdown(){
+  const el=$("cd"); el.style.display="flex";
+  for(const n of [3,2,1]){ el.textContent=n; tg?.HapticFeedback?.selectionChanged(); await new Promise(r=>setTimeout(r,1000)); }
+  el.style.display="none";
+}
+
+let clockTimer=null;
+async function start(){
+  cfg=EX[exKey]; counter=new RepCounter(cfg);
+  valid=0; total=0; win=[]; lastGood=0; lastTs=-1;
+  $("count").textContent="0"; $("exname").textContent=EX[exKey].icon+" "+L.ex[exKey]; $("clock").textContent="0:00"; hint("");
+  show("s-live");
+  try{ await openCam(); }catch(e){ show("s-setup"); tg?.showAlert?.(L.camerr)||alert(L.camerr); return; }
+  try{ wake=await navigator.wakeLock?.request("screen"); }catch{}
+  await countdown();
+  t0=performance.now(); lastGood=0; running=true;
+  clockTimer=setInterval(()=>{const s=Math.floor((performance.now()-t0)/1000);$("clock").textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0");},500);
+  loop();
+}
+
+let result=null;
+function stop(){
+  if(!running) return;
+  running=false; clearInterval(clockTimer);
+  const dur=(performance.now()-t0)/1000;
+  stream?.getTracks().forEach(t=>t.stop()); wake?.release?.().catch(()=>{});
+  const attempts=counter.reps+counter.partial;
+  result={v:1,ex:exKey,reps:counter.reps,partial:counter.partial,duration:Math.round(dur*10)/10,
+          quality:attempts?Math.round(100*counter.reps/attempts):100,duel:duel||null,
+          valid_ratio:total?Math.round(100*valid/total)/100:0};
+  $("r-reps").textContent=result.reps; $("r-ex").textContent=EX[exKey].icon+" "+L.ex[exKey];
+  $("r-time").textContent=Math.round(dur)+"s"; $("r-form").textContent=result.quality+"%"; $("r-part").textContent=result.partial;
+  show("s-res");
+}
+
+$("go").onclick=start;
+$("stop").onclick=stop;
+$("again").onclick=()=>show("s-setup");
+$("flip").onclick=async()=>{facing=facing==="user"?"environment":"user"; try{await openCam();}catch{}};
+$("send").onclick=()=>{
+  if(tg?.sendData) tg.sendData(JSON.stringify(result));   // закрывает Mini App и шлёт данные боту
+  else console.log("result",result);
+};
+
+try{ landmarker=await initModel(); $("load").remove(); }
+catch(e){ $("load").textContent="Не удалось загрузить нейросеть / Model failed to load"; }
+</script>
+</body>
+</html>
