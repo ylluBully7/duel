@@ -260,7 +260,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 
 /* ── Адрес API (его задаёт бот в ссылке). Принимаем доверенные тоннели и Render,
       чтобы чужая ссылка не могла увести данные Telegram на левый сервер. ── */
-const API_HOSTS = [/\.trycloudflare\.com$/i, /\.onrender\.com$/i, /\.ngrok-free\.(dev|app)$/i, /\.ngrok\.(io|app|dev)$/i];  // Cloudflare, Render, ngrok
+const API_HOSTS = [/\.trycloudflare\.com$/i, /\.onrender\.com$/i];            // Разрешили Cloudflare и Render
 function validApi(v){
   try{
     const u = new URL(v);
@@ -275,8 +275,7 @@ if (apiParam) {
     localStorage.setItem("saved_api", apiParam);
 }
 // Если в ссылке и в памяти ничего нет — жестко берем Render
-let savedApi = null; try{ savedApi = localStorage.getItem("saved_api"); }catch{}
-const API = apiParam || validApi(savedApi || "") || "https://brunette-karaoke-mangle.ngrok-free.dev";
+const API = apiParam || "https://duel.onrender.com";
 
 const lang = ((tg?.initDataUnsafe?.user?.language_code || navigator.language || "en").slice(0,2));
 const RU = ["ru","uk","be","kk"].includes(lang);
@@ -427,14 +426,30 @@ function vibrate(kind){ try{ tg?.HapticFeedback?.[kind.fn]?.(kind.arg); }catch{}
 
 /* ── Работа с сервером ── */
 async function api(path, o = {}){
-  const r = await fetch(API + path, {
-    method: o.method || "GET",
-    headers: {"Authorization": "tma " + (tg?.initData || ""), "Content-Type": "application/json", "ngrok-skip-browser-warning": "1"},
-    body: o.body ? JSON.stringify(o.body) : undefined
-  });
-  let data = null; try{ data = await r.json(); }catch{}
-  if(!r.ok){ const e = new Error("http " + r.status); e.status = r.status; e.data = data; throw e; }
-  return data;
+  // Render на бесплатном тарифе «просыпается» до минуты: для GET пробуем несколько раз
+  const method = o.method || "GET";
+  const tries = method === "GET" ? 6 : 1;
+  let lastErr;
+  for(let i = 0; i < tries; i++){
+    try{
+      const r = await fetch(API + path, {
+        method,
+        headers: {"Authorization": "tma " + (tg?.initData || ""), "Content-Type": "application/json"},
+        body: o.body ? JSON.stringify(o.body) : undefined
+      });
+      let data = null; try{ data = await r.json(); }catch{}
+      if(!r.ok){
+        const e = new Error("http " + r.status); e.status = r.status; e.data = data;
+        if([502,503,504].includes(r.status) && i < tries - 1){ lastErr = e; await new Promise(z => setTimeout(z, 4000)); continue; }
+        throw e;
+      }
+      return data;
+    }catch(e){
+      if(e.status || i >= tries - 1) throw e;   // ответ сервера (401, 404…) или попытки кончились
+      lastErr = e; await new Promise(z => setTimeout(z, 4000));
+    }
+  }
+  throw lastErr;
 }
 
 let ME = null, avatarUrl = null, BOT = "";
@@ -465,7 +480,7 @@ async function loadMe(){
 }
 async function loadAvatar(){
   try{
-    const r = await fetch(API + "/api/avatar", {headers: {"Authorization": "tma " + (tg?.initData || ""), "ngrok-skip-browser-warning": "1"}});
+    const r = await fetch(API + "/api/avatar", {headers: {"Authorization": "tma " + (tg?.initData || "")}});
     if(r.ok){ avatarUrl = URL.createObjectURL(await r.blob()); }
   }catch{}
   if(!avatarUrl && tg?.initDataUnsafe?.user?.photo_url) avatarUrl = tg.initDataUnsafe.user.photo_url;
