@@ -270,7 +270,11 @@ function validApi(v){
     return u.origin;
   }catch{ return null; }
 }
-const API = qs.get("api") ? validApi(qs.get("api")) : null;   // нет API → упрощённый режим (sendData)
+let apiParam = qs.get("api") ? validApi(qs.get("api")) : null;
+if (apiParam) {
+    localStorage.setItem("saved_api", apiParam);
+}
+const API = apiParam || localStorage.getItem("saved_api");
 
 const lang = ((tg?.initDataUnsafe?.user?.language_code || navigator.language || "en").slice(0,2));
 const RU = ["ru","uk","be","kk"].includes(lang);
