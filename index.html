@@ -274,7 +274,8 @@ let apiParam = qs.get("api") ? validApi(qs.get("api")) : null;
 if (apiParam) {
     localStorage.setItem("saved_api", apiParam);
 }
-const API = apiParam || localStorage.getItem("saved_api");
+// Если в ссылке и в памяти ничего нет — жестко берем Render
+const API = apiParam  localStorage.getItem("saved_api")  "https://duel.onrender.com";
 
 const lang = ((tg?.initDataUnsafe?.user?.language_code || navigator.language || "en").slice(0,2));
 const RU = ["ru","uk","be","kk"].includes(lang);
