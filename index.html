@@ -258,9 +258,9 @@ const qs = new URLSearchParams(location.search);
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-/* ── Адрес API (его задаёт бот в ссылке). Принимаем только туннели Cloudflare и localhost,
+/* ── Адрес API (его задаёт бот в ссылке). Принимаем доверенные тоннели и Render,
       чтобы чужая ссылка не могла увести данные Telegram на левый сервер. ── */
-const API_HOSTS = [/\.trycloudflare\.com$/i];            // свой домен: добавь сюда, например /^api\.example\.com$/
+const API_HOSTS = [/\.trycloudflare\.com$/i, /\.onrender\.com$/i];            // Разрешили Cloudflare и Render
 function validApi(v){
   try{
     const u = new URL(v);
