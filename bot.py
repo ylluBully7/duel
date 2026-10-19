@@ -1285,7 +1285,7 @@ async def on_webapp_data(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 # (положи cloudflared.exe в папку с bot.py: бот сам его запустит и узнает адрес).
 # Свой адрес можно задать переменной API_URL (например, если бот стоит на сервере).
 API_PORT = int(os.environ.get("PORT", os.environ.get("API_PORT", "8080")))
-API_URL = "https://duel.onrender.com"
+API_URL = os.environ.get("API_URL", "").strip().rstrip("/") or "https://brunette-karaoke-mangle.ngrok-free.dev"
 _api = {"token": "", "bot": None, "server": None, "tunnel": None}
 _bg_tasks: set = set()
 _avatar_cache: dict = {}
@@ -1569,7 +1569,7 @@ async def api_route(method, path, query, headers, body):
 
 
 _CORS = ["Access-Control-Allow-Origin: *",
-         "Access-Control-Allow-Headers: Authorization, Content-Type",
+         "Access-Control-Allow-Headers: Authorization, Content-Type, ngrok-skip-browser-warning",
          "Access-Control-Allow-Methods: GET, POST, OPTIONS",
          "Access-Control-Max-Age: 86400"]
 _REASONS = {200: "OK", 204: "No Content", 400: "Bad Request", 401: "Unauthorized", 404: "Not Found",
