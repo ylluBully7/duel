@@ -1285,7 +1285,7 @@ async def on_webapp_data(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 # (положи cloudflared.exe в папку с bot.py: бот сам его запустит и узнает адрес).
 # Свой адрес можно задать переменной API_URL (например, если бот стоит на сервере).
 API_PORT = int(os.environ.get("PORT", os.environ.get("API_PORT", "8080")))
-API_URL = os.environ.get("API_URL", "").strip().rstrip("/") or "https://brunette-karaoke-mangle.ngrok-free.dev"
+API_URL = "https://duel.onrender.com"
 _api = {"token": "", "bot": None, "server": None, "tunnel": None}
 _bg_tasks: set = set()
 _avatar_cache: dict = {}
