@@ -260,7 +260,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 
 /* ── Адрес API (его задаёт бот в ссылке). Принимаем доверенные тоннели и Render,
       чтобы чужая ссылка не могла увести данные Telegram на левый сервер. ── */
-const API_HOSTS = [/\.trycloudflare\.com$/i, /\.onrender\.com$/i];            // Разрешили Cloudflare и Render
+const API_HOSTS = [/\.trycloudflare\.com$/i, /\.onrender\.com$/i, /\.ngrok-free\.(dev|app)$/i, /\.ngrok\.(io|app|dev)$/i];  // Cloudflare, Render, ngrok
 function validApi(v){
   try{
     const u = new URL(v);
@@ -275,7 +275,8 @@ if (apiParam) {
     localStorage.setItem("saved_api", apiParam);
 }
 // Если в ссылке и в памяти ничего нет — жестко берем Render
-const API = apiParam  localStorage.getItem("saved_api")  "https://duel.onrender.com";
+let savedApi = null; try{ savedApi = localStorage.getItem("saved_api"); }catch{}
+const API = apiParam || validApi(savedApi || "") || "https://brunette-karaoke-mangle.ngrok-free.dev";
 
 const lang = ((tg?.initDataUnsafe?.user?.language_code || navigator.language || "en").slice(0,2));
 const RU = ["ru","uk","be","kk"].includes(lang);
@@ -428,7 +429,7 @@ function vibrate(kind){ try{ tg?.HapticFeedback?.[kind.fn]?.(kind.arg); }catch{}
 async function api(path, o = {}){
   const r = await fetch(API + path, {
     method: o.method || "GET",
-    headers: {"Authorization": "tma " + (tg?.initData || ""), "Content-Type": "application/json"},
+    headers: {"Authorization": "tma " + (tg?.initData || ""), "Content-Type": "application/json", "ngrok-skip-browser-warning": "1"},
     body: o.body ? JSON.stringify(o.body) : undefined
   });
   let data = null; try{ data = await r.json(); }catch{}
@@ -458,13 +459,13 @@ function errorBlock(retryFn){
 }
 
 async function loadMe(){
-  ME = await api("https://duel.onrender.com/api/"); BOT = ME.bot || BOT;
+  ME = await api("/api/me"); BOT = ME.bot || BOT;
   applySkin(); renderProfile(); renderModes(); renderSkins();
   if(!avatarUrl) loadAvatar();
 }
 async function loadAvatar(){
   try{
-    const r = await fetch(API + "https://duel.onrender.com/api/avatar", {headers: {"Authorization": "tma " + (tg?.initData || "")}});
+    const r = await fetch(API + "/api/avatar", {headers: {"Authorization": "tma " + (tg?.initData || ""), "ngrok-skip-browser-warning": "1"}});
     if(r.ok){ avatarUrl = URL.createObjectURL(await r.blob()); }
   }catch{}
   if(!avatarUrl && tg?.initDataUnsafe?.user?.photo_url) avatarUrl = tg.initDataUnsafe.user.photo_url;
