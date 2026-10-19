@@ -6,51 +6,205 @@
 <title>RepDuel</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-:root{--bg:#0f1420;--panel:#182033;--ink:#f2f5fb;--mute:#8d99b3;--acc:#7cd1ff;--ok:#5be3a0;--bad:#ff7a6b}
+:root{--bg:#0d1220;--panel:#171f33;--panel2:#1e2842;--line:#ffffff14;--ink:#f2f5fb;--mute:#8d99b3;--acc:#7cd1ff;--ok:#5be3a0;--bad:#ff7a6b;--gold:#ffd25a}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
-.screen{display:none;position:absolute;inset:0;padding:env(safe-area-inset-top) 18px env(safe-area-inset-bottom);flex-direction:column}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.screen{display:none;position:absolute;inset:0;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);flex-direction:column}
 .screen.on{display:flex}
-h1{font-size:26px;margin:22px 0 4px}
-p.sub{color:var(--mute);margin-bottom:18px}
+.pad{padding-left:18px;padding-right:18px}
+h1{font-size:26px;margin:20px 0 4px}
+h2{font-size:22px;margin:18px 0 4px}
+h3{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:22px 0 10px}
+p.sub{color:var(--mute);margin-bottom:16px}
+.grow{flex:1}
+.center{text-align:center;color:var(--mute)}
+small{color:var(--mute)}
+
+/* ── вкладки ── */
+#panes{flex:1;overflow-y:auto;padding:0 18px 40px;-webkit-overflow-scrolling:touch}
+.pane{display:none;animation:fade .25s ease}
+.pane.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#tabs{position:relative;z-index:3;display:flex;align-items:flex-end;background:#0a0f1ccc;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:6px 4px 8px}
+#tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--mute);font-size:11px;padding:4px 0}
+#tabs button i{font-style:normal;font-size:22px;filter:grayscale(1);opacity:.7;transition:.2s}
+#tabs button.on{color:var(--ink)}
+#tabs button.on i{filter:none;opacity:1;transform:translateY(-1px)}
+#tabs .center-tab .avbtn{width:62px;height:62px;border-radius:50%;margin-top:-30px;border:3px solid var(--line);background:var(--panel2);overflow:hidden;display:grid;place-items:center;box-shadow:0 6px 18px #0008;transition:.2s}
+#tabs .center-tab.on .avbtn{border-color:var(--acc);box-shadow:0 6px 22px #0009,0 0 0 4px #ffffff10}
+.avbtn img{width:100%;height:100%;object-fit:cover;display:none}
+.avbtn b{font-size:24px}
+
+/* ── карточки ── */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.cards{display:grid;gap:10px;grid-template-columns:minmax(0,1fr)}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.chips div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center}
+.chips strong{display:block;font-size:22px}
+.chips small{font-size:12px}
+.bar{height:8px;border-radius:6px;background:#ffffff18;overflow:hidden}
+.bar>i{display:block;height:100%;width:0;border-radius:6px;background:var(--acc);transition:width .8s cubic-bezier(.2,.8,.2,1)}
+
+/* ── профиль ── */
+.hero{margin-top:16px;border-radius:24px;padding:22px 18px 18px;text-align:center;background:linear-gradient(135deg,#16204a,#3a5cb0);position:relative;overflow:hidden;border:1px solid var(--line)}
+.hero::after{content:"";position:absolute;width:260px;height:260px;border-radius:50%;background:var(--acc);opacity:.13;right:-90px;top:-110px}
+.avwrap{position:relative;width:112px;height:112px;margin:0 auto 10px}
+.avwrap svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.avwrap .ring-bg{stroke:#ffffff26}
+.avwrap .ring{stroke:var(--acc);stroke-linecap:round;transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1)}
+.av{position:absolute;inset:9px;border-radius:50%;overflow:hidden;background:var(--panel2);display:grid;place-items:center;font-size:38px;font-weight:800}
+.av img{width:100%;height:100%;object-fit:cover;display:none}
+.lvlpill{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);background:var(--acc);color:#06121c;font-weight:800;font-size:12px;border-radius:12px;padding:2px 10px;white-space:nowrap}
+.pname{font-size:22px;font-weight:800;margin-top:12px;position:relative}
+.puser{color:#ffffffa0;font-size:14px;position:relative}
+.hero .bar{margin:14px 6px 6px;position:relative}
+.hero .lv{font-size:13px;color:#ffffffb0;position:relative}
+.exrec{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.exrec div{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 6px;text-align:center}
+.exrec b{display:block;font-size:26px}
+.exrec strong{display:block;font-size:22px;margin-top:2px}
+.achs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ach{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 4px;text-align:center;font-size:11px;color:var(--mute);line-height:1.2}
+.ach b{display:block;font-size:26px;margin-bottom:4px}
+.ach.off{opacity:.35;filter:grayscale(1)}
+.ach.on{color:var(--ink);border-color:var(--acc)}
+.list{display:grid;gap:8px}
+.li{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 14px}
+.li .gr{flex:1}
+.li .ic{font-size:24px}
+
+/* ── режимы ── */
+.mode{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:16px;transition:.15s}
+.mode:active{transform:scale(.98);border-color:var(--acc)}
+.mode .big-ic{font-size:40px;width:60px;height:60px;border-radius:18px;background:var(--panel2);display:grid;place-items:center}
+.mode .gr{flex:1}
+.mode b{display:block;font-size:18px}
+.mode small{display:block;margin-top:2px}
+.mode .rec{text-align:right}
+.mode .rec strong{display:block;font-size:24px;color:var(--acc)}
+
+/* ── дуэли ── */
+.pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.pick button{background:var(--panel2);border:2px solid transparent;border-radius:14px;padding:10px 2px;font-size:13px;text-align:center}
+.pick button b{display:block;font-size:26px}
+.pick button.sel{border-color:var(--acc)}
+.badge{font-size:12px;font-weight:700;border-radius:10px;padding:3px 9px;background:var(--panel2);color:var(--mute);white-space:nowrap}
+.badge.win{background:#5be3a022;color:var(--ok)}
+.badge.lose{background:#ff7a6b22;color:var(--bad)}
+.badge.draw{background:#ffd25a22;color:var(--gold)}
+.duel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.duel .top{display:flex;align-items:center;gap:10px}
+.duel .top b{flex:1}
+.duel .vs{display:flex;justify-content:space-around;align-items:center;margin:12px 0 4px;text-align:center}
+.duel .vs strong{display:block;font-size:30px}
+.duel .vs>div{min-width:0}
+.duel .ghost{background:var(--panel2)}
+.duel .vs small{display:block;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.duel .vs em{font-style:normal;color:var(--mute);font-weight:800}
+
+/* ── рейтинг ── */
+.seg{display:flex;background:var(--panel);border-radius:14px;padding:4px;margin:12px 0}
+.seg button{flex:1;padding:9px;border-radius:11px;color:var(--mute);font-weight:600}
+.seg button.on{background:var(--panel2);color:var(--ink)}
+.row{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 14px}
+.row.me{border-color:var(--acc);background:var(--panel2)}
+.row .rk{width:30px;text-align:center;font-size:20px;font-weight:800;color:var(--mute)}
+.row .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.row strong{font-size:20px}
+
+/* ── скины ── */
+.skin{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:12px 14px}
+.skin.sel{border-color:var(--acc)}
+.skin .sw{width:64px;height:64px;border-radius:16px;flex:none;position:relative;border:1px solid #ffffff22}
+.skin .sw::after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;right:8px;bottom:8px;background:var(--a)}
+.skin.locked{opacity:.55}
+.skin .gr{flex:1}
+.skin b{display:block;font-size:17px}
+
+/* ── тренировка ── */
 .exs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
-.ex{background:var(--panel);border:2px solid transparent;border-radius:16px;padding:16px 4px;text-align:center;color:var(--ink);font:inherit;font-size:14px}
+.ex{background:var(--panel);border:2px solid transparent;border-radius:16px;padding:16px 4px;text-align:center;font-size:14px}
 .ex b{display:block;font-size:30px;margin-bottom:4px}
 .ex.sel{border-color:var(--acc)}
 .tip{background:var(--panel);border-radius:14px;padding:14px 16px;color:var(--mute);font-size:14px;white-space:pre-line}
-.grow{flex:1}
-button.main{background:var(--acc);color:#06121c;border:0;border-radius:16px;padding:17px;font:inherit;font-weight:700;font-size:18px;margin:14px 0}
-button.ghost{background:var(--panel);color:var(--ink);border:0;border-radius:16px;padding:14px;font:inherit;margin-bottom:8px}
-#stage{position:relative;flex:1;margin:0 -18px;background:#000;overflow:hidden}
+.sethead{text-align:center;margin:10px 0 18px}
+.sethead .ic{font-size:64px;line-height:1.1}
+.sethead .badge{display:inline-block;margin-top:8px}
+button.main{background:var(--acc);color:#06121c;border:0;border-radius:16px;padding:17px;font-weight:700;font-size:18px;margin:14px 0 0;width:100%}
+button.main:disabled{opacity:.5}
+button.ghost{background:var(--panel);color:var(--ink);border-radius:16px;padding:14px;margin-top:8px;width:100%}
+.backlink{display:none;align-self:flex-start;color:var(--mute);padding:14px 0 4px}
+.nobt .backlink{display:block}
+#stage{position:relative;flex:1;background:#000;overflow:hidden}
 #cam,#ov{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .mir{transform:scaleX(-1)}
 #count{position:absolute;left:0;right:0;bottom:16px;text-align:center;font-size:120px;font-weight:800;line-height:1;text-shadow:0 4px 24px #000a}
 #meta{position:absolute;top:12px;left:14px;right:14px;display:flex;justify-content:space-between;font-weight:600;text-shadow:0 2px 8px #000}
 #hint{position:absolute;left:14px;right:14px;top:48px;text-align:center;color:#fff;background:#000a;border-radius:12px;padding:8px 12px;font-size:14px;display:none}
 #cd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:160px;font-weight:800;background:#0008}
-#bar{display:flex;gap:10px;padding:12px 0}
-#bar button{flex:1;margin:0}
-.res{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:18px 0}
-.res div{background:var(--panel);border-radius:14px;padding:12px;text-align:center}
-.res small{display:block;color:var(--mute);font-size:12px}
-.res strong{font-size:24px}
-.big{font-size:150px;font-weight:800;text-align:center;line-height:1.1;margin-top:20px;color:var(--acc)}
-.center{text-align:center;color:var(--mute)}
-#load{position:absolute;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--mute);z-index:5}
+#bar{display:flex;gap:10px;padding:12px 18px}
+#bar button{margin:0}
+#bar #flip{width:64px;flex:none}
+.res3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0}
+.res3 div{background:var(--panel);border-radius:14px;padding:12px;text-align:center}
+.res3 small{display:block;font-size:12px}
+.res3 strong{font-size:24px}
+.big{font-size:140px;font-weight:800;text-align:center;line-height:1.05;margin-top:14px;color:var(--acc)}
+.pill{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-top:8px;animation:fade .4s ease both}
+.pill.gold{border-color:var(--gold)}
+.pill.win{border-color:var(--ok)}
+.pill.lose{border-color:var(--bad)}
+.pill b{font-size:20px}
+.lvbox{margin-top:12px}
+.lvbox .bar{margin-top:6px}
+.chall{align-items:center;text-align:center}
+.chall .em{font-size:70px;margin-top:40px}
+
+/* ── прочее ── */
+#load{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;color:var(--mute);z-index:9}
+.spin{width:34px;height:34px;border-radius:50%;border:3px solid #ffffff22;border-top-color:var(--acc);animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#000d;color:#fff;border-radius:14px;padding:10px 16px;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:20;max-width:86%;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%)}
+.err{background:#ff7a6b18;border:1px solid var(--bad);border-radius:16px;padding:16px;margin-top:18px;text-align:center}
+.err button{margin-top:10px;background:var(--panel2);border-radius:12px;padding:10px 18px}
+.skel{height:84px;border-radius:18px;background:linear-gradient(90deg,var(--panel),var(--panel2),var(--panel));background-size:200% 100%;animation:sh 1.2s linear infinite;margin-top:12px}
+@keyframes sh{to{background-position:-200% 0}}
 </style>
 </head>
 <body>
-<div id="load">…</div>
+<div id="load"><div class="spin"></div><span>RepDuel</span></div>
 
-<section id="s-setup" class="screen on">
-  <h1 id="t-title"></h1>
-  <p class="sub" id="t-sub"></p>
+<!-- ГЛАВНАЯ: вкладки -->
+<section id="s-home" class="screen">
+  <div id="panes">
+    <section class="pane" id="p-modes"></section>
+    <section class="pane" id="p-duels"></section>
+    <section class="pane on" id="p-profile"></section>
+    <section class="pane" id="p-top"></section>
+    <section class="pane" id="p-skins"></section>
+  </div>
+  <nav id="tabs">
+    <button data-tab="modes"><i>💪</i><span></span></button>
+    <button data-tab="duels"><i>⚔️</i><span></span></button>
+    <button data-tab="profile" class="center-tab on"><div class="avbtn"><img alt=""><b>🙂</b></div><span></span></button>
+    <button data-tab="top"><i>🏆</i><span></span></button>
+    <button data-tab="skins"><i>🎨</i><span></span></button>
+  </nav>
+</section>
+
+<!-- Подготовка к подходу -->
+<section id="s-setup" class="screen pad">
+  <button class="backlink" id="back-setup"></button>
+  <div class="sethead" id="sethead"></div>
   <div class="exs" id="exs"></div>
   <div class="tip" id="tip"></div>
   <div class="grow"></div>
   <button class="main" id="go"></button>
 </section>
 
+<!-- Подход вживую -->
 <section id="s-live" class="screen">
   <div id="stage">
     <video id="cam" playsinline muted></video>
@@ -66,33 +220,63 @@ button.ghost{background:var(--panel);color:var(--ink);border:0;border-radius:16p
   </div>
 </section>
 
-<section id="s-res" class="screen">
+<!-- Результат -->
+<section id="s-res" class="screen pad">
   <div class="big" id="r-reps">0</div>
   <p class="center" id="r-ex"></p>
-  <div class="res">
+  <div class="res3">
     <div><small id="l-time"></small><strong id="r-time"></strong></div>
     <div><small id="l-form"></small><strong id="r-form"></strong></div>
     <div><small id="l-part"></small><strong id="r-part"></strong></div>
   </div>
+  <div id="r-extra" style="overflow-y:auto"></div>
   <div class="grow"></div>
-  <button class="main" id="send"></button>
-  <button class="ghost" id="again"></button>
+  <button class="main" id="r-main"></button>
+  <button class="ghost" id="r-sec" style="margin-bottom:12px"></button>
 </section>
 
-<script type="module">
-import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+<!-- Принять вызов -->
+<section id="s-chall" class="screen pad chall">
+  <div class="em">⚔️</div>
+  <h1 id="ch-title"></h1>
+  <p class="sub" id="ch-who"></p>
+  <div class="big" id="ch-n"></div>
+  <p class="center" id="ch-ex"></p>
+  <div class="grow"></div>
+  <button class="main" id="ch-accept"></button>
+  <button class="ghost" id="ch-cancel" style="margin-bottom:12px"></button>
+</section>
 
+<div id="toast"></div>
+
+<script type="module">
 const tg = window.Telegram?.WebApp;
 tg?.ready(); tg?.expand();
-try { tg?.disableVerticalSwipes?.(); } catch {}
+try { tg?.disableVerticalSwipes?.(); tg?.setHeaderColor?.("#0d1220"); tg?.setBackgroundColor?.("#0d1220"); } catch {}
 
 const qs = new URLSearchParams(location.search);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ── Адрес API (его задаёт бот в ссылке). Принимаем только туннели Cloudflare и localhost,
+      чтобы чужая ссылка не могла увести данные Telegram на левый сервер. ── */
+const API_HOSTS = [/\.trycloudflare\.com$/i];            // свой домен: добавь сюда, например /^api\.example\.com$/
+function validApi(v){
+  try{
+    const u = new URL(v);
+    const local = ["localhost","127.0.0.1"].includes(u.hostname);
+    if(u.protocol !== "https:" && !(local && u.protocol === "http:")) return null;
+    if(!local && !API_HOSTS.some(r => r.test(u.hostname))) return null;
+    return u.origin;
+  }catch{ return null; }
+}
+const API = qs.get("api") ? validApi(qs.get("api")) : null;   // нет API → упрощённый режим (sendData)
+
 const lang = ((tg?.initDataUnsafe?.user?.language_code || navigator.language || "en").slice(0,2));
 const RU = ["ru","uk","be","kk"].includes(lang);
 const L = RU ? {
-  title:"Счёт повторений", sub:"Поставь телефон, выбери упражнение — ИИ считает прямо в камере.",
-  start:"Начать", stop:"Закончить", send:"Отправить результат", again:"Заново",
-  time:"Время", form:"Чистота", part:"Неполные", wait:"Загружаю нейросеть…",
+  title:"Счёт повторений", start:"Начать", stop:"Закончить", send:"Отправить результат", again:"Заново",
+  time:"Время", form:"Чистота", part:"Неполные", wait:"Загружаю нейросеть…", model_err:"Не удалось загрузить нейросеть. Проверь интернет и попробуй ещё раз.",
   nopose:"Не вижу тебя. Встань так, чтобы всё тело было в кадре.",
   tilt_h:"Для отжиманий встань боком к камере, тело горизонтально.",
   tilt_v:"Встань вертикально, боком или лицом к камере.",
@@ -101,11 +285,29 @@ const L = RU ? {
   tips:{
    pushup:"• телефон сбоку на полу, 2 м от тебя\n• видно всё тело от рук до ног\n• локти до ~90°, затем полностью выпрямить",
    squat:"• телефон сбоку на уровне пояса, 2–3 м\n• видно от головы до стоп\n• колено до ~90°, затем встать полностью",
-   pullup:"• камера сбоку или чуть спереди, 2–3 м\n• видно перекладину и всё тело\n• из виса, подбородок выше кистей"}
+   pullup:"• камера сбоку или чуть спереди, 2–3 м\n• видно перекладину и всё тело\n• из виса, подбородок выше кистей"},
+  tabs:{modes:"Режимы",duels:"Дуэли",profile:"Профиль",top:"Рейтинг",skins:"Скины"},
+  avg:"В среднем", wins:"Побед", level:"Уровень", total:"Всего", best:"Рекорд", sets:"Подходов", week:"За неделю", records:"Рекорды", total_short:"всего",
+  achievements:"Достижения", recent:"Последние подходы", recent_empty:"Пока пусто. Сделай первый подход!",
+  modes_title:"Режимы", modes_sub:"Выбери упражнение: камера считает повторения вживую.", record:"рекорд",
+  duels_title:"Дуэли", duel_new:"Новая дуэль", duel_new_sub:"Выбери упражнение, выполни подход и отправь вызов другу.", duel_go:"Бросить вызов",
+  duel_list:"Мои дуэли", duel_empty:"Дуэлей пока нет", duel_wait_me:"Ждёт твоего подхода", duel_wait_opp:"Ждёт соперника",
+  win:"Победа", lose:"Поражение", draw:"Ничья", do_set:"Выполнить подход", share:"Отправить вызов другу", you:"Ты",
+  top_title:"Рейтинг", scope_week:"Неделя", scope_all:"Всё время", top_empty:"Пока пусто. Будь первым!", best_set:"лучший подход",
+  skins_title:"Скины карточек", skins_sub:"Открываются за общее число повторений.", need:"нужно", reps:"повт.",
+  ch_title:"Тебе бросили вызов!", ch_who:n=>`${n} бросает тебе вызов`, ch_beat:"Надо побить", accept:"Принять вызов", cancel:"Не сейчас",
+  duel_gone:"Такой дуэли нет или она уже завершена.", back:"‹ Назад",
+  saving:"Сохраняю…", saved_chat:"Карточка результата отправлена в чат", pb:"Новый личный рекорд!", ach_new:"Достижение", skin_new:"Открыт скин",
+  done:"Готово", to_duels:"К дуэлям", retry:"Отправить ещё раз", duel_badge:"⚔️ Дуэль",
+  duel_win:"Ты победил!", duel_lose:"Соперник оказался сильнее", duel_draw:"Ничья!", duel_pending:"Вызов готов: отправь его другу",
+  err_net:"Нет связи с сервером. Закрой приложение и открой снова из бота.", retry_load:"Повторить",
+  not_counted:"Подход не засчитан: не было ни одного полного повторения.", err_fast:"Слишком быстро: результат не принят.",
+  err_quality:"Тебя плохо видно в кадре: результат не принят.", err_bad:"Не удалось сохранить результат.",
+  open_tg:"Открой приложение из Telegram", pb_short:"рекорд", share_text:(n,e)=>`Бросаю вызов: побей мои ${n} (${e})! ИИ-судья считает честно.`,
+  level_to:n=>`до уровня ${n}`
 } : {
-  title:"Rep counter", sub:"Prop up your phone, pick an exercise. AI counts live on camera.",
-  start:"Start", stop:"Finish", send:"Send result", again:"Redo",
-  time:"Time", form:"Form", part:"Partial", wait:"Loading the model…",
+  title:"Rep counter", start:"Start", stop:"Finish", send:"Send result", again:"Redo",
+  time:"Time", form:"Form", part:"Partial", wait:"Loading the model…", model_err:"Couldn't load the model. Check your connection and try again.",
   nopose:"Can't see you. Keep your whole body in frame.",
   tilt_h:"For push-ups stand sideways to the camera, body horizontal.",
   tilt_v:"Stand upright, sideways or facing the camera.",
@@ -114,19 +316,35 @@ const L = RU ? {
   tips:{
    pushup:"• phone on the floor, side view, 2 m away\n• whole body in frame\n• elbows to ~90°, then lock out",
    squat:"• phone at waist height, side view, 2–3 m\n• head to feet in frame\n• knee to ~90°, then stand fully",
-   pullup:"• camera from the side or slightly front, 2–3 m\n• bar and whole body in frame\n• from dead hang, chin above wrists"}
+   pullup:"• camera from the side or slightly front, 2–3 m\n• bar and whole body in frame\n• from dead hang, chin above wrists"},
+  tabs:{modes:"Modes",duels:"Duels",profile:"Profile",top:"Top",skins:"Skins"},
+  avg:"Average", wins:"Wins", level:"Level", total:"Total", best:"Best", sets:"Sets", week:"This week", records:"Records", total_short:"total",
+  achievements:"Achievements", recent:"Recent sets", recent_empty:"Nothing yet. Do your first set!",
+  modes_title:"Modes", modes_sub:"Pick an exercise: the camera counts your reps live.", record:"best",
+  duels_title:"Duels", duel_new:"New duel", duel_new_sub:"Pick an exercise, do your set and send the challenge to a friend.", duel_go:"Challenge a friend",
+  duel_list:"My duels", duel_empty:"No duels yet", duel_wait_me:"Waiting for your set", duel_wait_opp:"Waiting for opponent",
+  win:"Win", lose:"Loss", draw:"Draw", do_set:"Do your set", share:"Send challenge to a friend", you:"You",
+  top_title:"Leaderboard", scope_week:"Week", scope_all:"All time", top_empty:"Nothing here yet. Be the first!", best_set:"best set",
+  skins_title:"Card skins", skins_sub:"Unlocked by total reps.", need:"need", reps:"reps",
+  ch_title:"You've been challenged!", ch_who:n=>`${n} challenges you`, ch_beat:"Beat", accept:"Accept challenge", cancel:"Not now",
+  duel_gone:"No such duel, or it's already finished.", back:"‹ Back",
+  saving:"Saving…", saved_chat:"Result card sent to the chat", pb:"New personal best!", ach_new:"Achievement", skin_new:"Skin unlocked",
+  done:"Done", to_duels:"To duels", retry:"Send again", duel_badge:"⚔️ Duel",
+  duel_win:"You won!", duel_lose:"Your opponent was stronger", duel_draw:"It's a draw!", duel_pending:"Challenge ready: send it to a friend",
+  err_net:"No connection to the server. Close the app and open it again from the bot.", retry_load:"Retry",
+  not_counted:"Set not counted: there was no full rep.", err_fast:"Too fast: result rejected.",
+  err_quality:"You were barely visible: result rejected.", err_bad:"Couldn't save the result.",
+  open_tg:"Open the app from Telegram", pb_short:"best", share_text:(n,e)=>`I challenge you: beat my ${n} (${e})! The AI judge counts honestly.`,
+  level_to:n=>`to level ${n}`
 };
 
-// Те же пороги, что в bot.py
+/* ── Упражнения (те же пороги, что в bot.py) ── */
 const EX = {
   pushup:{icon:"💪",joint:["sh","el","wr"],orient:"h",down:100,descent:135,up:150,gap:.35,chin:false},
   squat:{icon:"🦵",joint:["hip","kn","an"],orient:"v",down:100,descent:140,up:160,gap:.70,chin:false},
   pullup:{icon:"🧗",joint:["sh","el","wr"],orient:"v",down:75,descent:120,up:155,gap:.80,chin:true},
 };
-const SIDES = {
-  L:{sh:11,el:13,wr:15,hip:23,kn:25,an:27},
-  R:{sh:12,el:14,wr:16,hip:24,kn:26,an:28},
-};
+const SIDES = { L:{sh:11,el:13,wr:15,hip:23,kn:25,an:27}, R:{sh:12,el:14,wr:16,hip:24,kn:26,an:28} };
 const NOSE = 0;
 
 class RepCounter {
@@ -153,7 +371,6 @@ class RepCounter {
     return null;
   }
 }
-
 function angle(a,b,c){
   const v1=[a[0]-b[0],a[1]-b[1]], v2=[c[0]-b[0],c[1]-b[1]];
   const n=Math.hypot(...v1)*Math.hypot(...v2);
@@ -161,8 +378,6 @@ function angle(a,b,c){
   const cos=Math.max(-1,Math.min(1,(v1[0]*v2[0]+v1[1]*v2[1])/n));
   return Math.acos(cos)*180/Math.PI;
 }
-
-// Возвращает {ang, side, extra} или {err}
 function measure(lm,w,h,cfg){
   let best=null;
   for(const side of Object.values(SIDES)){
@@ -185,79 +400,320 @@ function measure(lm,w,h,cfg){
   return {ang,side,extra};
 }
 
-// ── UI ──
-const $=id=>document.getElementById(id);
-const show=id=>{document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id));};
-let exKey = EX[qs.get("ex")] ? qs.get("ex") : "pushup";
-const duel = qs.get("duel") || "";
+/* ── Навигация ── */
+let cur = "s-home", lastTab = "profile";
+const screens = () => document.querySelectorAll(".screen");
+function setScreen(id){
+  cur = id;
+  screens().forEach(s => s.classList.toggle("on", s.id === id));
+  const bb = tg?.BackButton;
+  if(bb){ (id === "s-home" || id === "s-live" || (!API && id === "s-setup")) ? bb.hide() : bb.show(); }
+}
+function goHome(tab){ setScreen("s-home"); go(tab || lastTab); }
+tg?.BackButton?.onClick(() => {
+  if(cur === "s-setup" || cur === "s-chall" || cur === "s-res") API ? goHome() : setScreen("s-setup");
+});
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2800);
+}
+function vibrate(kind){ try{ tg?.HapticFeedback?.[kind.fn]?.(kind.arg); }catch{} }
 
-$("t-title").textContent=L.title; $("t-sub").textContent=L.sub;
-$("go").textContent=L.start; $("stop").textContent=L.stop;
-$("send").textContent=L.send; $("again").textContent=L.again;
-$("l-time").textContent=L.time; $("l-form").textContent=L.form; $("l-part").textContent=L.part;
+/* ── Работа с сервером ── */
+async function api(path, o = {}){
+  const r = await fetch(API + path, {
+    method: o.method || "GET",
+    headers: {"Authorization": "tma " + (tg?.initData || ""), "Content-Type": "application/json"},
+    body: o.body ? JSON.stringify(o.body) : undefined
+  });
+  let data = null; try{ data = await r.json(); }catch{}
+  if(!r.ok){ const e = new Error("http " + r.status); e.status = r.status; e.data = data; throw e; }
+  return data;
+}
 
-function renderEx(){
-  $("exs").innerHTML="";
+let ME = null, avatarUrl = null, BOT = "";
+const rgb = a => `rgb(${a.join(",")})`;
+function fmtAgo(ts){
+  const s = Math.max(0, Date.now()/1000 - ts), rtf = new Intl.RelativeTimeFormat(RU ? "ru" : "en", {numeric:"auto"});
+  if(s < 3600) return rtf.format(-Math.max(1, Math.round(s/60)), "minute");
+  if(s < 86400) return rtf.format(-Math.round(s/3600), "hour");
+  return rtf.format(-Math.round(s/86400), "day");
+}
+function applySkin(){
+  if(!ME) return;
+  const sk = ME.skins.find(s => s.id === ME.skin) || ME.skins[0];
+  document.documentElement.style.setProperty("--acc", rgb(sk.accent));
+  const hero = $("hero"); if(hero) hero.style.background = `linear-gradient(135deg, ${rgb(sk.c1)}, ${rgb(sk.c2)})`;
+}
+function loadingBlock(){ return '<div class="skel"></div><div class="skel"></div><div class="skel"></div>'; }
+function errorBlock(retryFn){
+  const d = document.createElement("div"); d.className = "err";
+  d.innerHTML = `<div>${esc(L.err_net)}</div><button>${esc(L.retry_load)}</button>`;
+  d.querySelector("button").onclick = retryFn; return d;
+}
+
+async function loadMe(){
+  ME = await api("/api/me"); BOT = ME.bot || BOT;
+  applySkin(); renderProfile(); renderModes(); renderSkins();
+  if(!avatarUrl) loadAvatar();
+}
+async function loadAvatar(){
+  try{
+    const r = await fetch(API + "/api/avatar", {headers: {"Authorization": "tma " + (tg?.initData || "")}});
+    if(r.ok){ avatarUrl = URL.createObjectURL(await r.blob()); }
+  }catch{}
+  if(!avatarUrl && tg?.initDataUnsafe?.user?.photo_url) avatarUrl = tg.initDataUnsafe.user.photo_url;
+  paintAvatar();
+}
+function paintAvatar(){
+  const letter = (ME?.user?.name || "?").trim().charAt(0).toUpperCase() || "?";
+  document.querySelectorAll(".avbtn, .av").forEach(el => {
+    const img = el.querySelector("img"), b = el.querySelector("b") || el.querySelector(".lt");
+    if(avatarUrl){ img.src = avatarUrl; img.style.display = "block"; if(b) b.style.display = "none"; }
+    else if(b){ b.textContent = letter; b.style.display = ""; }
+  });
+}
+
+/* ── Профиль ── */
+function renderProfile(){
+  const m = ME, C = 2 * Math.PI * 52;
+  const frac = Math.max(0, Math.min(1, m.progress));
+  const recs = Object.keys(EX).map(k => `<div><b>${EX[k].icon}</b><strong>${m.bests[k]}</strong><small>${esc(L.total_short)} ${m.totals[k]}</small></div>`).join("");
+  const achs = m.ach.map(a => `<div class="ach ${a.unlocked ? "on" : "off"}"><b>${a.icon}</b>${esc(a.name)}</div>`).join("");
+  const recent = m.recent.length
+    ? m.recent.map(r => `<div class="li"><span class="ic">${EX[r.ex]?.icon || "💪"}</span><span class="gr">${esc(L.ex[r.ex] || r.ex)}<br><small>${esc(fmtAgo(r.ts))}</small></span><strong style="font-size:22px">${r.reps}</strong></div>`).join("")
+    : `<p class="center" style="padding:12px 0">${esc(L.recent_empty)}</p>`;
+  $("p-profile").innerHTML = `
+    <div class="hero" id="hero">
+      <div class="avwrap">
+        <svg viewBox="0 0 112 112" width="112" height="112"><circle class="ring-bg" cx="56" cy="56" r="52" fill="none" stroke-width="5"/><circle class="ring" cx="56" cy="56" r="52" fill="none" stroke-width="5" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg>
+        <div class="av"><img alt=""><span class="lt"></span></div>
+        <div class="lvlpill">${esc(L.level)} ${m.level}</div>
+      </div>
+      <div class="pname">${esc(m.user.name)}</div>
+      <div class="puser">${m.user.username ? "@" + esc(m.user.username) : "&nbsp;"}</div>
+      <div class="bar"><i style="width:${frac * 100}%"></i></div>
+      <div class="lv">${m.total} / ${m.hi} · ${esc(L.level_to(m.level + 1))}</div>
+    </div>
+    <div class="chips">
+      <div><strong>${m.total}</strong><small>${esc(L.total)}</small></div>
+      <div><strong>${m.best}</strong><small>${esc(L.best)}</small></div>
+      <div><strong>${m.sets}</strong><small>${esc(L.sets)}</small></div>
+    </div>
+    <div class="chips" style="margin-top:10px">
+      <div><strong>${m.week}</strong><small>${esc(L.week)}</small></div>
+      <div><strong>${m.duel_wins}</strong><small>⚔️ ${esc(L.wins)}</small></div>
+      <div><strong>${m.sets ? Math.round(m.total / m.sets) : 0}</strong><small>${esc(L.avg)}</small></div>
+    </div>
+    <h3>${esc(L.records)}</h3><div class="exrec">${recs}</div>
+    <h3>${esc(L.achievements)}</h3><div class="achs">${achs}</div>
+    <h3>${esc(L.recent)}</h3><div class="list">${recent}</div>`;
+  applySkin(); paintAvatar();
+  requestAnimationFrame(() => { const r = document.querySelector("#p-profile .ring"); if(r) r.style.strokeDashoffset = C * (1 - frac); });
+}
+
+/* ── Режимы ── */
+function renderModes(){
+  $("p-modes").innerHTML = `<h1>${esc(L.modes_title)}</h1><p class="sub">${esc(L.modes_sub)}</p><div class="cards" id="modelist"></div>`;
   for(const k of Object.keys(EX)){
-    const b=document.createElement("button");
-    b.className="ex"+(k===exKey?" sel":"");
-    b.innerHTML=`<b>${EX[k].icon}</b>${L.ex[k]}`;
-    b.onclick=()=>{exKey=k;renderEx();tg?.HapticFeedback?.selectionChanged();};
+    const b = document.createElement("button"); b.className = "mode";
+    b.innerHTML = `<span class="big-ic">${EX[k].icon}</span><span class="gr"><b>${esc(L.ex[k])}</b><small>${esc(L.tips[k].split("\n")[0].replace("• ", ""))}</small></span><span class="rec"><strong>${ME?.bests?.[k] ?? 0}</strong><small>${esc(L.record)}</small></span>`;
+    b.onclick = () => openSetup(k, null);
+    $("modelist").appendChild(b);
+  }
+}
+
+/* ── Дуэли ── */
+let duelEx = "pushup";
+async function loadDuels(){
+  const pane = $("p-duels");
+  pane.innerHTML = `<h1>${esc(L.duels_title)}</h1>` + loadingBlock();
+  let list;
+  try{ list = (await api("/api/duels")).duels; }
+  catch{ pane.innerHTML = `<h1>${esc(L.duels_title)}</h1>`; pane.appendChild(errorBlock(loadDuels)); return; }
+  const pick = Object.keys(EX).map(k => `<button data-ex="${k}" class="${k === duelEx ? "sel" : ""}"><b>${EX[k].icon}</b>${esc(L.ex[k])}</button>`).join("");
+  pane.innerHTML = `<h1>${esc(L.duels_title)}</h1>
+    <div class="card" style="margin-top:12px"><b>${esc(L.duel_new)}</b><p class="sub" style="margin:4px 0 0">${esc(L.duel_new_sub)}</p>
+      <div class="pick" id="duelpick">${pick}</div>
+      <button class="main" id="duelgo" style="margin-top:0">⚔️ ${esc(L.duel_go)}</button></div>
+    <h3>${esc(L.duel_list)}</h3><div class="cards" id="duellist"></div>`;
+  $("duelpick").querySelectorAll("button").forEach(b => b.onclick = () => {
+    duelEx = b.dataset.ex; $("duelpick").querySelectorAll("button").forEach(x => x.classList.toggle("sel", x === b));
+  });
+  $("duelgo").onclick = async () => {
+    $("duelgo").disabled = true;
+    try{ const d = await api("/api/duel/new", {method:"POST", body:{ex:duelEx}}); openSetup(d.ex, {code:d.code}); }
+    catch{ toast(L.err_net); }
+    $("duelgo").disabled = false;
+  };
+  const box = $("duellist");
+  if(!list.length){ box.innerHTML = `<p class="center" style="padding:10px 0">${esc(L.duel_empty)}</p>`; return; }
+  for(const d of list){
+    const el = document.createElement("div"); el.className = "duel";
+    const waitingMe = d.role === "creator" && d.status === "waiting";
+    const waitingOpp = d.role === "creator" && d.status === "open";
+    const badge = d.status === "done" ? `<span class="badge ${d.outcome}">${esc(L[d.outcome])}</span>`
+      : `<span class="badge">${esc(waitingMe ? L.duel_wait_me : L.duel_wait_opp)}</span>`;
+    const opp = d.status === "done" ? `<strong>${d.opp_reps}</strong><small>${esc(d.opp_name || "?")}</small>` : `<strong>?</strong><small>${esc(d.opp_name || "…")}</small>`;
+    const mine = d.me_reps == null ? "–" : d.me_reps;
+    el.innerHTML = `<div class="top"><span style="font-size:22px">${EX[d.ex].icon}</span><b>${esc(L.ex[d.ex])}</b>${badge}</div>
+      <div class="vs"><div><strong>${mine}</strong><small>${esc(L.you)}</small></div><em>VS</em><div>${opp}</div></div>`;
+    if(waitingMe || waitingOpp){
+      const b = document.createElement("button"); b.className = "ghost";
+      b.textContent = waitingMe ? "📹 " + L.do_set : "📤 " + L.share;
+      b.onclick = () => waitingMe ? openSetup(d.ex, {code:d.code}) : shareDuel(d.code, d.ex, d.me_reps);
+      el.appendChild(b);
+    }
+    box.appendChild(el);
+  }
+}
+function shareDuel(code, ex, reps){
+  const link = `https://t.me/${BOT}?start=duel_${code}`;
+  const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(L.share_text(reps, L.ex[ex]))}`;
+  if(tg?.openTelegramLink) tg.openTelegramLink(url); else window.open(url, "_blank");
+}
+
+/* ── Рейтинг ── */
+let topScope = "week", topEx = "pushup";
+async function loadTop(){
+  const pane = $("p-top");
+  const head = `<h1>${esc(L.top_title)}</h1>
+    <div class="seg" id="seg-scope"><button data-s="week" class="${topScope==="week"?"on":""}">📅 ${esc(L.scope_week)}</button><button data-s="all" class="${topScope==="all"?"on":""}">♾ ${esc(L.scope_all)}</button></div>
+    <div class="seg" id="seg-ex">${Object.keys(EX).map(k => `<button data-e="${k}" class="${k===topEx?"on":""}">${EX[k].icon}</button>`).join("")}</div>`;
+  pane.innerHTML = head + loadingBlock();
+  const wire = () => {
+    $("seg-scope").querySelectorAll("button").forEach(b => b.onclick = () => { topScope = b.dataset.s; loadTop(); });
+    $("seg-ex").querySelectorAll("button").forEach(b => b.onclick = () => { topEx = b.dataset.e; loadTop(); });
+  };
+  wire();
+  let r;
+  try{ r = await api(`/api/top?scope=${topScope}&ex=${topEx}`); }
+  catch{ pane.innerHTML = head; wire(); pane.appendChild(errorBlock(loadTop)); return; }
+  const medals = ["🥇","🥈","🥉"];
+  const row = x => `<div class="row ${x.me ? "me" : ""}"><span class="rk">${medals[x.rank-1] || x.rank}</span><span class="nm">${esc(x.name)}</span><strong>${x.best}</strong></div>`;
+  let html = r.rows.length ? `<div class="cards">${r.rows.map(row).join("")}</div>` : `<p class="center" style="padding:20px 0">${esc(L.top_empty)}</p>`;
+  if(r.me) html += `<div class="center" style="margin:6px 0">⋯</div><div class="cards">${row(r.me)}</div>`;
+  pane.innerHTML = head + `<p class="sub" style="margin:0 0 10px">${EX[topEx].icon} ${esc(L.ex[topEx])} · ${esc(L.best_set)}</p>` + html;
+  wire();
+}
+
+/* ── Скины ── */
+function renderSkins(){
+  $("p-skins").innerHTML = `<h1>${esc(L.skins_title)}</h1><p class="sub">${esc(L.skins_sub)}</p><div class="cards" id="skinlist"></div>`;
+  for(const s of ME.skins){
+    const b = document.createElement("button");
+    b.className = "skin" + (s.id === ME.skin ? " sel" : "") + (s.unlocked ? "" : " locked");
+    b.style.setProperty("--a", rgb(s.accent));
+    b.innerHTML = `<span class="sw" style="background:linear-gradient(135deg,${rgb(s.c1)},${rgb(s.c2)})"></span>
+      <span class="gr"><b>${esc(s.name)}</b><small>${s.unlocked ? (s.id === ME.skin ? "✅" : "") : "🔒 " + esc(L.need) + " " + s.unlock + " " + esc(L.reps)}</small></span>`;
+    b.onclick = async () => {
+      if(!s.unlocked){ toast(`🔒 ${L.need} ${s.unlock} ${L.reps}`); return; }
+      if(s.id === ME.skin) return;
+      try{ await api("/api/skin", {method:"POST", body:{skin:s.id}}); ME.skin = s.id; applySkin(); renderSkins(); renderProfile(); vibrate({fn:"selectionChanged"}); }
+      catch{ toast(L.err_net); }
+    };
+    $("skinlist").appendChild(b);
+  }
+}
+
+/* ── Вкладки ── */
+const TABS = ["modes","duels","profile","top","skins"];
+function go(tab){
+  if(!TABS.includes(tab)) tab = "profile";
+  lastTab = tab;
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+  TABS.forEach(t => $("p-" + t).classList.toggle("on", t === tab));
+  $("panes").scrollTop = 0;
+  if(tab === "duels") loadDuels();
+  if(tab === "top") loadTop();
+  if(tab === "profile" || tab === "modes" || tab === "skins") refreshMe();
+}
+let meBusy = false, meAt = 0;
+async function refreshMe(){
+  if(meBusy || (ME && Date.now() - meAt < 15000)) return; meBusy = true;
+  try{ await loadMe(); meAt = Date.now(); }
+  catch{ if(!ME){ const p = $("p-" + lastTab); p.innerHTML = ""; p.appendChild(errorBlock(() => { p.innerHTML = loadingBlock(); refreshMe(); })); } }
+  meBusy = false;
+}
+document.querySelectorAll("#tabs button").forEach(b => {
+  b.querySelector("span").textContent = L.tabs[b.dataset.tab];
+  b.onclick = () => { vibrate({fn:"selectionChanged"}); go(b.dataset.tab); };
+});
+
+/* ── Подготовка к подходу ── */
+let exKey = EX[qs.get("ex")] ? qs.get("ex") : "pushup";
+let curDuel = qs.get("duel") && !API ? {code: qs.get("duel")} : null;   // в упрощённом режиме дуэль приходит из ссылки
+function renderLegacyEx(){
+  $("exs").innerHTML = "";
+  for(const k of Object.keys(EX)){
+    const b = document.createElement("button"); b.className = "ex" + (k === exKey ? " sel" : "");
+    b.innerHTML = `<b>${EX[k].icon}</b>${esc(L.ex[k])}`;
+    b.onclick = () => { exKey = k; renderLegacyEx(); fillSetup(); vibrate({fn:"selectionChanged"}); };
     $("exs").appendChild(b);
   }
-  $("tip").textContent=L.tips[exKey];
 }
-renderEx();
+function fillSetup(){
+  $("tip").textContent = L.tips[exKey];
+  $("sethead").innerHTML = API
+    ? `<div class="ic">${EX[exKey].icon}</div><h2>${esc(L.ex[exKey])}</h2>${curDuel ? `<span class="badge">${esc(L.duel_badge)}</span>` : ""}`
+    : `<h1>${esc(L.title)}</h1>`;
+  $("exs").style.display = API ? "none" : "grid";
+}
+function openSetup(ex, duel){
+  exKey = ex; curDuel = duel; fillSetup(); setScreen("s-setup");
+}
+$("go").textContent = L.start; $("stop").textContent = L.stop;
+$("back-setup").textContent = L.back; $("back-setup").onclick = () => goHome();
+if(!tg?.initData) document.body.classList.add("nobt");
+$("l-time").textContent = L.time; $("l-form").textContent = L.form; $("l-part").textContent = L.part;
 
-// ── Нейросеть ──
-let landmarker=null;
+/* ── Нейросеть (грузим в фоне, интерфейс не ждёт) ── */
+let landmarker = null;
 async function initModel(){
-  const fileset=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  const V = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+  const {PoseLandmarker, FilesetResolver} = await import(V + "/vision_bundle.mjs");
+  const fileset = await FilesetResolver.forVisionTasks(V + "/wasm");
   // Сначала своя копия модели рядом с index.html, потом Google
-  const urls=["./pose_landmarker_lite.task","https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task"];
+  const urls = ["./pose_landmarker_lite.task","https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task"];
   for(const url of urls){
     for(const delegate of ["GPU","CPU"]){
       try{
-        return await PoseLandmarker.createFromOptions(fileset,{
-          baseOptions:{modelAssetPath:url,delegate},
-          runningMode:"VIDEO",numPoses:1});
-      }catch(e){console.warn("model init",url,delegate,e);}
+        return await PoseLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:url,delegate},runningMode:"VIDEO",numPoses:1});
+      }catch(e){ console.warn("model init", url, delegate, e); }
     }
   }
   throw new Error("model");
 }
+let modelPromise = null;
+const ensureModel = () => (modelPromise ||= initModel().then(m => (landmarker = m)).catch(e => { modelPromise = null; throw e; }));
+setTimeout(() => ensureModel().catch(() => {}), 300);
 
-// ── Камера и цикл ──
+/* ── Камера и цикл подсчёта ── */
 let stream=null, facing="user", running=false, counter, cfg, t0=0, valid=0, total=0, win=[], lastGood=0, lastTs=-1, wake=null;
 const vid=$("cam"), cv=$("ov"), ctx=cv.getContext("2d");
 
 async function openCam(){
-  stream?.getTracks().forEach(t=>t.stop());
-  stream=await navigator.mediaDevices.getUserMedia({
+  stream?.getTracks().forEach(t => t.stop());
+  stream = await navigator.mediaDevices.getUserMedia({
     video:{facingMode:facing,width:{ideal:640},height:{ideal:480},frameRate:{ideal:30}},audio:false});
-  vid.srcObject=stream; await vid.play();
-  const m=facing==="user";
-  vid.classList.toggle("mir",m); cv.classList.toggle("mir",m);
+  vid.srcObject = stream; await vid.play();
+  const m = facing === "user";
+  vid.classList.toggle("mir", m); cv.classList.toggle("mir", m);
 }
-
-function hint(msg){ const h=$("hint"); h.textContent=msg||""; h.style.display=msg?"block":"none"; }
-
+function hint(msg){ const h=$("hint"); h.textContent = msg || ""; h.style.display = msg ? "block" : "none"; }
 function drawPose(lm,side,w,h){
   ctx.clearRect(0,0,cv.width,cv.height);
   if(!lm||!side) return;
-  // object-fit: cover — пересчёт координат кадра в координаты канваса
   const s=Math.max(cv.width/w,cv.height/h), ox=(cv.width-w*s)/2, oy=(cv.height-h*s)/2;
   const P=i=>[lm[i].x*w*s+ox, lm[i].y*h*s+oy];
   ctx.lineWidth=5; ctx.lineCap="round"; ctx.strokeStyle="#7cd1ff"; ctx.fillStyle="#fff";
-  const chains=[["sh","el","wr"],["sh","hip","kn","an"]];
-  for(const ch of chains){
+  for(const ch of [["sh","el","wr"],["sh","hip","kn","an"]]){
     ctx.beginPath();
     ch.forEach((k,i)=>{const [x,y]=P(side[k]); i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
     ctx.stroke();
     ch.forEach(k=>{const [x,y]=P(side[k]); ctx.beginPath(); ctx.arc(x,y,6,0,7); ctx.fill();});
   }
 }
-
 function loop(){
   if(!running) return;
   requestAnimationFrame(loop);
@@ -278,57 +734,164 @@ function loop(){
   win.push(m.ang); if(win.length>3) win.shift();
   const avg=win.reduce((a,b)=>a+b,0)/win.length;
   const r=counter.update(avg,t,m.extra);
-  if(r==="rep"){ $("count").textContent=counter.reps; tg?.HapticFeedback?.impactOccurred("medium"); }
-  else if(r==="partial"){ tg?.HapticFeedback?.notificationOccurred("warning"); }
+  if(r==="rep"){ $("count").textContent=counter.reps; vibrate({fn:"impactOccurred",arg:"medium"}); }
+  else if(r==="partial"){ vibrate({fn:"notificationOccurred",arg:"warning"}); }
   drawPose(lm,m.side,w,h);
 }
-
 async function countdown(){
   const el=$("cd"); el.style.display="flex";
-  for(const n of [3,2,1]){ el.textContent=n; tg?.HapticFeedback?.selectionChanged(); await new Promise(r=>setTimeout(r,1000)); }
+  for(const n of [3,2,1]){ el.textContent=n; vibrate({fn:"selectionChanged"}); await new Promise(r=>setTimeout(r,1000)); }
   el.style.display="none";
 }
 
-let clockTimer=null;
+let clockTimer=null, starting=false;
 async function start(){
-  cfg=EX[exKey]; counter=new RepCounter(cfg);
-  valid=0; total=0; win=[]; lastGood=0; lastTs=-1;
-  $("count").textContent="0"; $("exname").textContent=EX[exKey].icon+" "+L.ex[exKey]; $("clock").textContent="0:00"; hint("");
-  show("s-live");
-  try{ await openCam(); }catch(e){ show("s-setup"); tg?.showAlert?.(L.camerr)||alert(L.camerr); return; }
-  try{ wake=await navigator.wakeLock?.request("screen"); }catch{}
-  await countdown();
-  t0=performance.now(); lastGood=0; running=true;
-  clockTimer=setInterval(()=>{const s=Math.floor((performance.now()-t0)/1000);$("clock").textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0");},500);
-  loop();
+  if(starting || running) return; starting = true;
+  const btn = $("go"); const label = btn.textContent;
+  try{
+    if(!landmarker){
+      btn.disabled = true; btn.textContent = L.wait;
+      try{ await ensureModel(); }
+      catch{ (tg?.showAlert ? tg.showAlert(L.model_err) : alert(L.model_err)); return; }
+      finally{ btn.disabled = false; btn.textContent = label; }
+    }
+    cfg=EX[exKey]; counter=new RepCounter(cfg);
+    valid=0; total=0; win=[]; lastGood=0; lastTs=-1;
+    $("count").textContent="0"; $("exname").textContent=(curDuel && API ? "⚔️ " : "")+EX[exKey].icon+" "+L.ex[exKey]; $("clock").textContent="0:00"; hint("");
+    setScreen("s-live");
+    try{ await openCam(); }catch{ setScreen("s-setup"); (tg?.showAlert ? tg.showAlert(L.camerr) : alert(L.camerr)); return; }
+    try{ wake=await navigator.wakeLock?.request("screen"); }catch{}
+    await countdown();
+    t0=performance.now(); lastGood=0; running=true;
+    clockTimer=setInterval(()=>{const s=Math.floor((performance.now()-t0)/1000);$("clock").textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0");},500);
+    loop();
+  } finally { starting = false; }
 }
-
-let result=null;
 function stop(){
   if(!running) return;
   running=false; clearInterval(clockTimer);
   const dur=(performance.now()-t0)/1000;
   stream?.getTracks().forEach(t=>t.stop()); wake?.release?.().catch(()=>{});
-  const attempts=counter.reps+counter.partial;
-  result={v:1,ex:exKey,reps:counter.reps,partial:counter.partial,duration:Math.round(dur*10)/10,
-          quality:attempts?Math.round(100*counter.reps/attempts):100,duel:duel||null,
-          valid_ratio:total?Math.round(100*valid/total)/100:0};
-  $("r-reps").textContent=result.reps; $("r-ex").textContent=EX[exKey].icon+" "+L.ex[exKey];
-  $("r-time").textContent=Math.round(dur)+"s"; $("r-form").textContent=result.quality+"%"; $("r-part").textContent=result.partial;
-  show("s-res");
+  finishWorkout({ex:exKey, reps:counter.reps, partial:counter.partial, duration:Math.round(dur*10)/10,
+                 valid_ratio: total ? Math.round(100*valid/total)/100 : 0});
+}
+$("go").onclick = start; $("stop").onclick = stop;
+$("flip").onclick = async () => { facing = facing === "user" ? "environment" : "user"; try{ await openCam(); }catch{} };
+
+/* ── Результат ── */
+let pending = null;
+function fillBasic(r){
+  const attempts = r.reps + r.partial, q = attempts ? Math.round(100 * r.reps / attempts) : 100;
+  $("r-reps").textContent = r.reps; $("r-ex").textContent = EX[r.ex].icon + " " + L.ex[r.ex];
+  $("r-time").textContent = Math.round(r.duration) + "s"; $("r-form").textContent = q + "%"; $("r-part").textContent = r.partial;
+  $("r-extra").innerHTML = "";
+}
+function pill(cls, html){ const d = document.createElement("div"); d.className = "pill " + cls; d.innerHTML = html; $("r-extra").appendChild(d); }
+function setButtons(main, mainFn, sec, secFn){
+  const m = $("r-main"), s = $("r-sec");
+  m.textContent = main; m.onclick = mainFn; m.disabled = false; m.style.display = main ? "" : "none";
+  s.textContent = sec; s.onclick = secFn; s.style.display = sec ? "" : "none";
 }
 
-$("go").onclick=start;
-$("stop").onclick=stop;
-$("again").onclick=()=>show("s-setup");
-$("flip").onclick=async()=>{facing=facing==="user"?"environment":"user"; try{await openCam();}catch{}};
-$("send").onclick=()=>{
-  if(tg?.sendData) tg.sendData(JSON.stringify(result));   // закрывает Mini App и шлёт данные боту
-  else console.log("result",result);
-};
+function finishWorkout(r){
+  fillBasic(r); setScreen("s-res");
+  if(!API){   // упрощённый режим: данные уходят боту через sendData и приложение закрывается
+    const attempts = r.reps + r.partial;
+    pending = {v:1, ...r, quality: attempts ? Math.round(100*r.reps/attempts) : 100, duel: curDuel?.code || null};
+    setButtons(L.send, () => { if(tg?.sendData) tg.sendData(JSON.stringify(pending)); else console.log("result", pending); },
+               L.again, () => setScreen("s-setup"));
+    return;
+  }
+  if(r.reps < 1){
+    pill("lose", `<span>${esc(L.not_counted)}</span>`);
+    setButtons(L.again, () => openSetup(r.ex, curDuel), L.done, () => goHome("profile"));
+    return;
+  }
+  submit(r);
+}
+async function submit(r){
+  $("r-extra").innerHTML = ""; pill("", `<div class="spin" style="width:20px;height:20px;border-width:2px"></div><span>${esc(L.saving)}</span>`);
+  setButtons("", null, "", null);
+  try{
+    const res = await api("/api/result", {method:"POST", body:{...r, duel: curDuel?.code || null}});
+    showServerResult(res);
+  }catch(e){
+    const code = e.data?.error;
+    $("r-extra").innerHTML = "";
+    if(e.status === 409){ pill("lose", `<span>${esc(L.duel_gone)}</span>`); setButtons(L.done, () => goHome("duels"), "", null); return; }
+    const msg = code === "too_fast" ? L.err_fast : code === "low_quality" ? L.err_quality : (e.status === 400 ? L.err_bad : L.err_net);
+    pill("lose", `<span>${esc(msg)}</span>`);
+    const canRetry = !(e.status === 400);
+    setButtons(canRetry ? L.retry : L.again, canRetry ? () => submit(r) : () => openSetup(r.ex, curDuel), L.done, () => goHome("profile"));
+  }
+}
+function showServerResult(res){
+  const ex = $("r-extra"); ex.innerHTML = "";
+  vibrate({fn:"notificationOccurred", arg:"success"});
+  const lv = Math.max(0, Math.min(1, res.progress));
+  if(res.pb) pill("gold", `<b>🔥</b><span>${esc(L.pb)}</span>`);
+  for(const a of res.ach) pill("gold", `<b>${a.icon}</b><span>${esc(L.ach_new)}: <b style="font-size:inherit">${esc(a.name)}</b></span>`);
+  for(const s of res.skins) pill("gold", `<b>🎨</b><span>${esc(L.skin_new)}: <b style="font-size:inherit">${esc(s.name)}</b></span>`);
+  if(res.duel){
+    const d = res.duel;
+    if(d.status === "done"){
+      const key = d.outcome === "win" ? "duel_win" : d.outcome === "lose" ? "duel_lose" : "duel_draw";
+      pill(d.outcome === "lose" ? "lose" : "win", `<b>${d.outcome === "win" ? "🏆" : d.outcome === "lose" ? "💪" : "🤝"}</b><span>${esc(L[key])}<br><small>${d.me_reps} : ${d.opp_reps}</small></span>`);
+    } else pill("win", `<b>⚔️</b><span>${esc(L.duel_pending)}</span>`);
+  }
+  const box = document.createElement("div"); box.className = "lvbox";
+  box.innerHTML = `<small>${esc(L.level)} ${res.level} · ${res.total} / ${res.hi}</small><div class="bar"><i></i></div>`;
+  ex.appendChild(box);
+  requestAnimationFrame(() => requestAnimationFrame(() => { box.querySelector("i").style.width = (lv * 100) + "%"; }));
+  const note = document.createElement("small"); note.style.cssText = "display:block;margin-top:10px;text-align:center"; note.textContent = "📨 " + L.saved_chat; ex.appendChild(note);
+  ME = null;   // профиль и режимы обновятся при следующем заходе
+  if(res.duel && res.duel.role === "creator" && res.duel.status === "open"){
+    setButtons("📤 " + L.share, () => shareDuel(res.duel.code, res.ex, res.reps), L.to_duels, () => goHome("duels"));
+  } else if(res.duel){
+    setButtons(L.to_duels, () => goHome("duels"), L.done, () => goHome("profile"));
+  } else {
+    setButtons(L.done, () => goHome("profile"), L.again, () => openSetup(res.ex, null));
+  }
+}
 
-try{ landmarker=await initModel(); $("load").remove(); }
-catch(e){ $("load").textContent="Не удалось загрузить нейросеть / Model failed to load"; }
+/* ── Вызов по ссылке ── */
+async function handleDuelLink(code){
+  let d;
+  try{ d = await api("/api/duel?code=" + encodeURIComponent(code)); }
+  catch(e){ toast(e.status === 404 ? L.duel_gone : L.err_net); return; }
+  if(d.can_accept){
+    $("ch-title").textContent = L.ch_title; $("ch-who").textContent = L.ch_who(d.creator_name || "?");
+    $("ch-n").textContent = d.c_reps; $("ch-ex").textContent = `${EX[d.ex].icon} ${L.ex[d.ex]} · ${L.ch_beat}`;
+    $("ch-accept").textContent = "✅ " + L.accept; $("ch-cancel").textContent = L.cancel;
+    $("ch-accept").onclick = () => openSetup(d.ex, {code: d.code});
+    $("ch-cancel").onclick = () => goHome("duels");
+    setScreen("s-chall");
+  } else if(d.role === "creator" && d.status === "waiting"){
+    openSetup(d.ex, {code: d.code});
+  } else { go("duels"); if(d.status === "done") toast(L.duel_gone); }
+}
+
+/* ── Старт ── */
+window.__rd = {openSetup, finishWorkout};   // для автотестов интерфейса
+async function init(){
+  if(!API){            // упрощённый режим: как раньше, только выбор упражнения и счёт
+    renderLegacyEx(); fillSetup(); setScreen("s-setup"); $("load").remove(); return;
+  }
+  if(!tg?.initData){ $("load").innerHTML = `<span>${esc(L.open_tg)}</span>`; return; }
+  const tab = qs.get("tab"), ex = qs.get("ex"), duel = qs.get("duel");
+  $("p-profile").innerHTML = loadingBlock();
+  setScreen("s-home");
+  try{ await loadMe(); meAt = Date.now(); }
+  catch(e){
+    $("load").remove();
+    const p = $("p-profile"); p.innerHTML = ""; p.appendChild(errorBlock(() => location.reload())); return;
+  }
+  $("load").remove();
+  go(TABS.includes(tab) ? tab : "profile");
+  if(duel) handleDuelLink(duel);
+  else if(tab === "modes" && EX[ex]) openSetup(ex, null);
+}
+init();
 </script>
 </body>
 </html>
