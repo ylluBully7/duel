@@ -457,13 +457,13 @@ function errorBlock(retryFn){
 }
 
 async function loadMe(){
-  ME = await api("/api/me"); BOT = ME.bot || BOT;
+  ME = await api("https://duel.onrender.com/api/"); BOT = ME.bot || BOT;
   applySkin(); renderProfile(); renderModes(); renderSkins();
   if(!avatarUrl) loadAvatar();
 }
 async function loadAvatar(){
   try{
-    const r = await fetch(API + "/api/avatar", {headers: {"Authorization": "tma " + (tg?.initData || "")}});
+    const r = await fetch(API + "https://duel.onrender.com/api/avatar", {headers: {"Authorization": "tma " + (tg?.initData || "")}});
     if(r.ok){ avatarUrl = URL.createObjectURL(await r.blob()); }
   }catch{}
   if(!avatarUrl && tg?.initDataUnsafe?.user?.photo_url) avatarUrl = tg.initDataUnsafe.user.photo_url;
