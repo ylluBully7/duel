@@ -1284,7 +1284,7 @@ async def on_webapp_data(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 # Поэтому бот поднимает маленький HTTP-сервер, а наружу его открывает туннель Cloudflare
 # (положи cloudflared.exe в папку с bot.py: бот сам его запустит и узнает адрес).
 # Свой адрес можно задать переменной API_URL (например, если бот стоит на сервере).
-API_PORT = int(os.environ.get("API_PORT", "8080"))
+API_PORT = int(os.environ.get("PORT", os.environ.get("API_PORT", "8080")))
 API_URL = os.environ.get("API_URL", "").strip().rstrip("/") or "https://brunette-karaoke-mangle.ngrok-free.dev"
 _api = {"token": "", "bot": None, "server": None, "tunnel": None}
 _bg_tasks: set = set()
@@ -1659,7 +1659,7 @@ async def start_api(app):
     global API_URL
     _api["token"], _api["bot"] = app.bot.token, app.bot
     try:
-        _api["server"] = await asyncio.start_server(_http_client, "127.0.0.1", API_PORT)
+        _api["server"] = await asyncio.start_server(_http_client, "0.0.0.0", API_PORT)
     except OSError as e:
         log.error("Не удалось открыть порт %s (%s). Закрой другой запущенный bot.py.", API_PORT, e)
         return
